@@ -79,14 +79,14 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="<?= base_url('dashboard') ?>">
+                    <a class="nav-link" href="<?= base_url('proses_ahp') ?>">
                         <i class="fas fa-fw fa-tasks"></i>
                         <span>Proses AHP</span>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="<?= base_url('dashboard') ?>">
+                    <a class="nav-link" href="<?= base_url('pm_ahp') ?>">
                         <i class="fas fa-fw fa-microchip"></i>
                         <span>Profile Matching dan Pembobotan AHP</span>
                     </a>
@@ -96,7 +96,7 @@
 
 
             <li class="nav-item">
-                <a class="nav-link" href="<?= base_url('dashboard') ?>">
+                <a class="nav-link" href="<?= base_url('ranking') ?>">
                     <i class="fas fa-fw fa-trophy"></i>
                     <span>Peringkat</span>
                 </a>

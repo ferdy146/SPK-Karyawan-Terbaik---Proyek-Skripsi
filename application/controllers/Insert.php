@@ -127,4 +127,42 @@ class Insert extends CI_Controller
         redirect('data_nilai');
     }
 
+    public function simpan_perbandingan()
+    {
+        $data = $this->input->post('nilai');
+
+        if (!$data) {
+            echo "<script>alert('Input tidak boleh kosong');window.history.back();</script>";
+            exit;
+        }
+
+        $this->db->truncate('perbandingan_kriteria');
+
+        foreach ($data as $i => $row) {
+            foreach ($row as $j => $val) {
+
+                $val = floatval($val);
+
+                if ($val == 0)
+                    $val = 1;
+
+                // i → j
+                $this->db->insert('perbandingan_kriteria', [
+                    'kriteria_1' => $i,
+                    'kriteria_2' => $j,
+                    'nilai' => $val
+                ]);
+
+                // j → i
+                $this->db->insert('perbandingan_kriteria', [
+                    'kriteria_1' => $j,
+                    'kriteria_2' => $i,
+                    'nilai' => 1 / $val
+                ]);
+            }
+        }
+
+        redirect('proses_ahp');
+    }
+
 }

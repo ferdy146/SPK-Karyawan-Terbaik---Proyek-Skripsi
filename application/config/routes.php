@@ -17,3 +17,8 @@ $route['edit_karyawan'] = 'Controller/edit_karyawan';
 $route['data_nilai'] = 'Controller/data_nilai';
 $route['tambah_data_nilai'] = 'Controller/tambah_data_nilai';
 $route['edit_data_nilai'] = 'Controller/edit_data_nilai';
+
+$route['perbandingan_berpasangan'] = 'Controller/perbandingan_berpasangan';
+$route['proses_ahp'] = 'Controller/proses_ahp';
+$route['pm_ahp'] = 'Controller/proses_pm';
+$route['ranking'] = 'Controller/ranking';

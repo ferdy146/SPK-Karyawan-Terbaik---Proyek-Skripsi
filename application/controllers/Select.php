@@ -60,4 +60,16 @@ class Select extends CI_Controller
 
         echo json_encode($this->db->query($query)->result_array());
     }
+
+    public function ranking()
+    {
+        $query = "
+        SELECT k.nama_karyawan, h.nilai_akhir
+        FROM hasil_akhir h
+        JOIN karyawan k ON k.id_karyawan = h.id_karyawan
+        ORDER BY h.nilai_akhir DESC
+    ";
+
+        echo json_encode($this->db->query($query)->result_array());
+    }
 }
