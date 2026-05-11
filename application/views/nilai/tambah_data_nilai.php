@@ -118,7 +118,7 @@ if ($_SESSION['role'] != 'admin') {
         <div class="container my-auto">
             <div class="text-center my-auto">
                 <span>©
-                    <?= date("Y"); ?> PT Candra Karya Group
+                    <?= date("Y"); ?> PT Candra Karya Group.
                 </span>
             </div>
         </div>

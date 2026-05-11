@@ -173,7 +173,7 @@ if (!isset($_SESSION['login'])) {
         <div class="container my-auto">
             <div class="copyright text-center my-auto">
                 <span>©️
-                    <?= date("Y"); ?> PT Kanisius.
+                    <?= date("Y"); ?> PT Candra Karya Group.
                 </span>
             </div>
         </div>

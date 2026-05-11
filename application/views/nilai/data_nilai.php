@@ -106,7 +106,7 @@ if ($_SESSION['role'] != 'admin') {
         <div class="container my-auto">
             <div class="copyright text-center my-auto">
                 <span>©
-                    <?php echo date("Y"); ?> PT Kanisius.
+                    <?php echo date("Y"); ?> PT Candra Karya Group.
                 </span>
             </div>
         </div>

@@ -22,3 +22,7 @@ $route['perbandingan_berpasangan'] = 'Controller/perbandingan_berpasangan';
 $route['proses_ahp'] = 'Controller/proses_ahp';
 $route['pm_ahp'] = 'Controller/proses_pm';
 $route['ranking'] = 'Controller/ranking';
+
+$route['kelola_user'] = 'Controller/kelola_user';
+$route['tambah_user'] = 'Controller/tambah_user';
+$route['edit_user'] = 'Controller/edit_user';

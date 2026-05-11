@@ -6,6 +6,7 @@
             <button class="btn btn-link d-md-none rounded-circle mr-3">
                 <i class="fa fa-bars"></i>
             </button>
+
             <ul class="navbar-nav ml-auto">
                 <img src="<?= base_url('img/pt.png') ?>" style="height:90px;">
             </ul>
@@ -13,103 +14,150 @@
 
         <div class="container-fluid">
 
-            <h4 class="mb-3">Input Perbandingan Berpasangan (AHP)</h4>
+            <h4 class="mb-3">
+                Input Perbandingan Berpasangan (AHP)
+            </h4>
 
-            <p>
-                <b>Petunjuk:</b><br>
-                1 = Sama penting |
-                3 = Sedikit lebih penting |
-                5 = Lebih penting |
-                7 = Sangat penting |
-                9 = Mutlak lebih penting <br>
-                Nilai 0.xx = kebalikannya
-            </p>
+            <div class="alert alert-info">
+
+                <b>Petunjuk Skala AHP :</b>
+                <br><br>
+
+                <b>1</b> = Sama penting<br>
+                <b>3</b> = Sedikit lebih penting<br>
+                <b>5</b> = Lebih penting<br>
+                <b>7</b> = Sangat penting<br>
+                <b>9</b> = Mutlak lebih penting<br><br>
+
+                Nilai pecahan:
+                <br>
+
+                <b>1/2</b> = Kebalikan dari 2<br>
+                <b>1/3</b> = Kebalikan dari 3<br>
+                dst.
+
+            </div>
 
             <form method="post" action="<?= base_url('Insert/simpan_perbandingan') ?>">
 
-                <table class="table table-bordered text-center align-middle">
+                <div class="table-responsive">
 
-                    <tr class="bg-primary text-white">
-                        <th>Kriteria</th>
-                        <?php foreach ($kriteria as $k): ?>
-                            <th><?= $k->kode ?></th>
-                        <?php endforeach; ?>
-                    </tr>
+                    <table class="table table-bordered text-center align-middle">
 
-                    <?php foreach ($kriteria as $i): ?>
-                        <tr>
-                            <th class="bg-light"><?= $i->kode ?></th>
+                        <!-- HEADER -->
+                        <tr class="bg-primary text-white">
 
-                            <?php foreach ($kriteria as $j): ?>
-                                <td>
+                            <th width="200">
+                                Kriteria
+                            </th>
 
-                                    <?php if ($i->id_kriteria == $j->id_kriteria): ?>
+                            <?php foreach ($kriteria as $k): ?>
 
-                                        <input type="text" class="form-control text-center" value="1" readonly>
+                                <th>
+                                    <?= $k->kode ?>
+                                </th>
 
-                                    <?php elseif ($i->id_kriteria < $j->id_kriteria): ?>
-
-                                        <?php
-                                        $value = isset($matrix[$i->id_kriteria][$j->id_kriteria])
-                                            ? $matrix[$i->id_kriteria][$j->id_kriteria]
-                                            : 1;
-
-                                        $opsi = [
-                                            1,
-                                            2,
-                                            3,
-                                            4,
-                                            5,
-                                            6,
-                                            7,
-                                            8,
-                                            9,
-                                            0.5,
-                                            0.333,
-                                            0.25,
-                                            0.2,
-                                            0.167,
-                                            0.143,
-                                            0.125,
-                                            0.111
-                                        ];
-                                        ?>
-
-                                        <select name="nilai[<?= $i->id_kriteria ?>][<?= $j->id_kriteria ?>]"
-                                            class="form-control perbandingan" data-i="<?= $i->id_kriteria ?>"
-                                            data-j="<?= $j->id_kriteria ?>">
-
-                                            <?php foreach ($opsi as $o): ?>
-                                                <option value="<?= $o ?>" <?= ($value == $o ? 'selected' : '') ?>>
-                                                    <?= $o ?>
-                                                </option>
-                                            <?php endforeach; ?>
-
-                                        </select>
-
-                                    <?php else: ?>
-
-                                        <?php
-                                        $val = isset($matrix[$j->id_kriteria][$i->id_kriteria])
-                                            ? number_format($matrix[$j->id_kriteria][$i->id_kriteria], 2)
-                                            : '';
-                                        ?>
-
-                                        <input type="text" class="form-control text-center"
-                                            id="inv_<?= $i->id_kriteria ?>_<?= $j->id_kriteria ?>" value="<?= $val ?>" readonly>
-
-                                    <?php endif; ?>
-
-                                </td>
                             <?php endforeach; ?>
 
                         </tr>
-                    <?php endforeach; ?>
 
-                </table>
+                        <!-- ISI -->
+                        <?php foreach ($kriteria as $i): ?>
+
+                            <tr>
+
+                                <!-- NAMA BARIS -->
+                                <th class="bg-light">
+
+                                    <?= $i->kode ?>
+
+                                </th>
+
+                                <?php foreach ($kriteria as $j): ?>
+
+                                    <td>
+
+                                        <!-- DIAGONAL -->
+                                        <?php if ($i->id_kriteria == $j->id_kriteria): ?>
+
+                                            <input type="text" class="form-control text-center font-weight-bold bg-light" value="1"
+                                                readonly>
+
+                                        <?php else: ?>
+
+                                            <?php
+                                            $value = isset($matrix[$i->id_kriteria][$j->id_kriteria])
+                                                ? $matrix[$i->id_kriteria][$j->id_kriteria]
+                                                : '';
+                                            ?>
+
+                                            <select name="nilai[<?= $i->id_kriteria ?>][<?= $j->id_kriteria ?>]"
+                                                class="form-control perbandingan text-center" data-i="<?= $i->id_kriteria ?>"
+                                                data-j="<?= $j->id_kriteria ?>">
+
+                                                <option value="">
+                                                    -- pilih --
+                                                </option>
+
+                                                <!-- SKALA 1 - 9 -->
+                                                <?php for ($x = 1; $x <= 9; $x++): ?>
+
+                                                    <option value="<?= number_format($x, 10, '.', '') ?>"
+                                                        <?= (number_format((float) $value, 10, '.', '') == number_format($x, 10, '.', '')) ? 'selected' : '' ?>>
+
+                                                        <?= $x ?>
+
+                                                    </option>
+
+                                                <?php endfor; ?>
+
+                                                <!-- PECAHAN -->
+                                                <?php
+                                                $pecahan = [
+                                                    "1/2" => 1 / 2,
+                                                    "1/3" => 1 / 3,
+                                                    "1/4" => 1 / 4,
+                                                    "1/5" => 1 / 5,
+                                                    "1/6" => 1 / 6,
+                                                    "1/7" => 1 / 7,
+                                                    "1/8" => 1 / 8,
+                                                    "1/9" => 1 / 9
+                                                ];
+                                                ?>
+
+                                                <?php foreach ($pecahan as $label => $val): ?>
+
+                                                    <option value="<?= number_format($val, 10, '.', '') ?>"
+                                                        <?= (number_format((float) $value, 10, '.', '') == number_format($val, 10, '.', '')) ? 'selected' : '' ?>>
+
+                                                        <?= $label ?>
+
+                                                    </option>
+
+                                                <?php endforeach; ?>
+
+                                            </select>
+
+                                        <?php endif; ?>
+
+                                    </td>
+
+                                <?php endforeach; ?>
+
+                            </tr>
+
+                        <?php endforeach; ?>
+
+                    </table>
+
+                </div>
 
                 <button type="submit" class="btn btn-primary mt-3">
+
+                    <i class="fa fa-save"></i>
+
                     Simpan & Proses AHP
+
                 </button>
 
             </form>
@@ -119,32 +167,56 @@
 
     <!-- FOOTER -->
     <footer class="sticky-footer bg-white">
+
         <div class="container my-auto">
+
             <div class="copyright text-center my-auto">
-                <span>© <?= date("Y"); ?> PT Kanisius.</span>
+
+                <span>
+                    © <?= date("Y"); ?> PT Candra Karya Group.
+                </span>
+
             </div>
+
         </div>
+
     </footer>
 
 </div>
 
-<!-- SCRIPT -->
+<!-- JQUERY -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<!-- SCRIPT AUTO RECIPROCAL -->
 <script>
+
     $(document).ready(function () {
 
         $('.perbandingan').change(function () {
 
             let i = $(this).data('i');
             let j = $(this).data('j');
+
             let val = parseFloat($(this).val());
 
-            if (!val || val == 0) val = 1;
+            // validasi
+            if (!val || val <= 0) {
+                return;
+            }
 
-            let inverse = (1 / val).toFixed(2);
+            // reciprocal
+            let inverse = 1 / val;
 
-            $('#inv_' + j + '_' + i).val(inverse);
+            // samakan decimal dengan option
+            inverse = inverse.toFixed(10);
+
+            // target select lawan
+            let target = $('select[data-i="' + j + '"][data-j="' + i + '"]');
+
+            // set value otomatis
+            target.val(inverse);
+
         });
+
     });
 </script>

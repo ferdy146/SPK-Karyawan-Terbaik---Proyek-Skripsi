@@ -13,13 +13,13 @@ class Insert extends CI_Controller
         $this->load->model("Model");
     }
 
-    public function contoh2()
-    {
-        $inputAjax = $this->input->post('inputAjax');
+    // public function contoh2()
+    // {
+    //     $inputAjax = $this->input->post('inputAjax');
 
-        $this->Model->contoh2($inputAjax);
-        redirect('menu');
-    }
+    //     $this->Model->contoh2($inputAjax);
+    //     redirect('menu');
+    // }
 
     public function tambah_karyawan()
     {
@@ -141,28 +141,122 @@ class Insert extends CI_Controller
         foreach ($data as $i => $row) {
             foreach ($row as $j => $val) {
 
+                // skip diagonal
+                if ($i == $j) {
+                    $val = 1;
+                }
+
                 $val = floatval($val);
 
-                if ($val == 0)
+                if ($val <= 0) {
                     $val = 1;
+                }
 
-                // i → j
                 $this->db->insert('perbandingan_kriteria', [
                     'kriteria_1' => $i,
                     'kriteria_2' => $j,
                     'nilai' => $val
                 ]);
-
-                // j → i
-                $this->db->insert('perbandingan_kriteria', [
-                    'kriteria_1' => $j,
-                    'kriteria_2' => $i,
-                    'nilai' => 1 / $val
-                ]);
             }
         }
 
         redirect('proses_ahp');
+    }
+
+    public function tambah_user()
+    {
+        // ambil input
+        $nama = $this->input->post('nama');
+        $email = $this->input->post('email');
+        $password = $this->input->post('password');
+        $role = $this->input->post('role');
+
+        // cek email sudah ada atau belum
+        $cek = $this->db
+            ->get_where('users', ['email' => $email])
+            ->row();
+
+        if ($cek) {
+
+            $this->session->set_flashdata('type', 'alert-danger');
+            $this->session->set_flashdata('pesan', '<strong>Gagal!</strong> Email sudah digunakan');
+
+            redirect('tambah_user');
+            return;
+        }
+
+        // simpan user
+        $data = [
+            'nama' => $nama,
+            'email' => $email,
+            'password' => md5($password),
+            'role' => $role
+        ];
+
+        $this->db->insert('users', $data);
+
+        // notifikasi
+        $this->session->set_flashdata('type', 'alert-success');
+        $this->session->set_flashdata('pesan', '<strong>Sukses!</strong> Data user berhasil ditambahkan');
+
+        redirect('kelola_user');
+    }
+
+    public function update_user()
+    {
+        $id = $this->input->post('id_user');
+
+        $data = [
+            'nama' => $this->input->post('nama'),
+            'email' => $this->input->post('email'),
+            'role' => $this->input->post('role')
+        ];
+
+        // cek password diubah atau tidak
+        $password = $this->input->post('password');
+
+        if (!empty($password)) {
+
+            $data['password'] = md5($password);
+        }
+
+        $this->db->where('id_user', $id);
+        $this->db->update('users', $data);
+
+        $this->session->set_flashdata('type', 'alert-success');
+        $this->session->set_flashdata('pesan', '<strong>Sukses!</strong> Data user berhasil diupdate');
+
+        redirect('kelola_user');
+    }
+
+    public function delete_user()
+    {
+        $id = $this->input->get('id');
+
+        // cek data user
+        $user = $this->db
+            ->get_where('users', ['id_user' => $id])
+            ->row();
+
+        // jika user tidak ditemukan
+        if (!$user) {
+
+            $this->session->set_flashdata('type', 'alert-danger');
+            $this->session->set_flashdata('pesan', '<strong>Gagal!</strong> User tidak ditemukan');
+
+            redirect('kelola_user');
+            return;
+        }
+
+        // hapus user
+        $this->db->where('id_user', $id);
+        $this->db->delete('users');
+
+        // notifikasi
+        $this->session->set_flashdata('type', 'alert-success');
+        $this->session->set_flashdata('pesan', '<strong>Sukses!</strong> Data user berhasil dihapus');
+
+        redirect('kelola_user');
     }
 
 }

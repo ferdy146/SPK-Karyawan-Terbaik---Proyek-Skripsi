@@ -135,37 +135,37 @@ class Controller extends CI_Controller
         $kriteria = $this->db->get('kriteria')->result();
         $n = count($kriteria);
 
-        // ambil data perbandingan
-        $data = $this->db->get('perbandingan_kriteria')->result();
+        $perbandingan = $this->db->get('perbandingan_kriteria')->result();
 
-        // =========================
-        // VALIDASI DATA
-        // =========================
-        if (empty($data)) {
-            echo "<script>alert('Data perbandingan belum diinput!');window.location='" . base_url('perbandingan_berpasangan') . "';</script>";
+        if (!$perbandingan) {
+            echo "<script>alert('Data perbandingan belum diinput');window.location='" . base_url('perbandingan_berpasangan') . "';</script>";
             exit;
         }
 
         // =========================
-        // BUAT MATRIX AMAN
+        // MATRIX
         // =========================
         $matrix = [];
 
         foreach ($kriteria as $i) {
+
             foreach ($kriteria as $j) {
 
-                // default
-                $matrix[$i->id_kriteria][$j->id_kriteria] = 1;
+                if ($i->id_kriteria == $j->id_kriteria) {
 
-                if ($i->id_kriteria != $j->id_kriteria) {
+                    $matrix[$i->id_kriteria][$j->id_kriteria] = 1;
 
-                    foreach ($data as $d) {
-                        if ($d->kriteria_1 == $i->id_kriteria && $d->kriteria_2 == $j->id_kriteria) {
-                            $matrix[$i->id_kriteria][$j->id_kriteria] = (float) $d->nilai;
-                            break;
-                        }
-                    }
+                } else {
 
+                    $nilai = $this->db
+                        ->get_where('perbandingan_kriteria', [
+                            'kriteria_1' => $i->id_kriteria,
+                            'kriteria_2' => $j->id_kriteria
+                        ])
+                        ->row();
+
+                    $matrix[$i->id_kriteria][$j->id_kriteria] =
+                        $nilai ? (float) $nilai->nilai : 1;
                 }
             }
         }
@@ -176,11 +176,15 @@ class Controller extends CI_Controller
         $total_kolom = [];
 
         foreach ($kriteria as $j) {
+
             $sum = 0;
+
             foreach ($kriteria as $i) {
+
                 $sum += $matrix[$i->id_kriteria][$j->id_kriteria];
             }
-            $total_kolom[$j->id_kriteria] = ($sum == 0 ? 1 : $sum);
+
+            $total_kolom[$j->id_kriteria] = $sum;
         }
 
         // =========================
@@ -189,12 +193,12 @@ class Controller extends CI_Controller
         $normal = [];
 
         foreach ($kriteria as $i) {
+
             foreach ($kriteria as $j) {
 
                 $normal[$i->id_kriteria][$j->id_kriteria] =
-                    $matrix[$i->id_kriteria][$j->id_kriteria] /
-                    $total_kolom[$j->id_kriteria];
-
+                    $matrix[$i->id_kriteria][$j->id_kriteria]
+                    / $total_kolom[$j->id_kriteria];
             }
         }
 
@@ -203,50 +207,51 @@ class Controller extends CI_Controller
         // =========================
         $eigen = [];
 
-        foreach ($kriteria as $i) {
+        foreach ($normal as $i => $row) {
 
-            $row = isset($normal[$i->id_kriteria]) ? $normal[$i->id_kriteria] : [];
-
-            $eigen[$i->id_kriteria] =
-                count($row) > 0 ? array_sum($row) / count($row) : 0;
+            $eigen[$i] = array_sum($row) / $n;
         }
 
         // =========================
-        // LAMBDA MAX
+        // LAMBDA MAX 
         // =========================
-        $lambda = [];
 
-        foreach ($kriteria as $i) {
+        $lambda_detail = [];
 
-            $jumlah = 0;
+        $lambda_max = 0;
 
-            foreach ($kriteria as $j) {
+        foreach ($kriteria as $k) {
 
-                $val = isset($matrix[$i->id_kriteria][$j->id_kriteria])
-                    ? $matrix[$i->id_kriteria][$j->id_kriteria]
-                    : 0;
+            $id = $k->id_kriteria;
 
-                $eig = isset($eigen[$j->id_kriteria])
-                    ? $eigen[$j->id_kriteria]
-                    : 0;
+            // jumlah kolom
+            $jumlah_kolom = $total_kolom[$id];
 
-                $jumlah += $val * $eig;
-            }
+            // eigen vector
+            $eigen_vector = $eigen[$id];
 
-            $eigen_i = isset($eigen[$i->id_kriteria]) && $eigen[$i->id_kriteria] != 0
-                ? $eigen[$i->id_kriteria]
-                : 1;
+            // hasil perkalian
+            $hasil = $jumlah_kolom * $eigen_vector;
 
-            $lambda[] = $jumlah / $eigen_i;
+            // total eigen max
+            $lambda_max += $hasil;
+
+            // simpan detail
+            $lambda_detail[$id] = [
+                'jumlah_kolom' => $jumlah_kolom,
+                'eigen' => $eigen_vector,
+                'hasil' => $hasil
+            ];
         }
 
-        $lambda_max = count($lambda) > 0 ? array_sum($lambda) / count($lambda) : 0;
+        // =========================
+        // CI
+        // =========================
+        $ci = ($lambda_max - $n) / ($n - 1);
 
         // =========================
-        // CI & CR
+        // RI
         // =========================
-        $ci = ($n > 1) ? ($lambda_max - $n) / ($n - 1) : 0;
-
         $ri_table = [
             1 => 0,
             2 => 0,
@@ -260,14 +265,21 @@ class Controller extends CI_Controller
             10 => 1.49
         ];
 
-        $ri = isset($ri_table[$n]) ? $ri_table[$n] : 1.49;
-
-        $cr = ($ri == 0) ? 0 : $ci / $ri;
+        $ri = $ri_table[$n];
 
         // =========================
-        // SIMPAN BOBOT (AMAN)
+        // CR
+        // =========================
+        $cr = $ci / $ri;
+
+        // =========================
+        // SIMPAN BOBOT
         // =========================
         if ($cr < 0.1) {
+
+            // =========================
+            // SIMPAN BOBOT AHP
+            // =========================
 
             $this->db->truncate('ahp_bobot');
 
@@ -275,22 +287,24 @@ class Controller extends CI_Controller
 
                 $this->db->insert('ahp_bobot', [
                     'id_kriteria' => $id,
-                    'bobot' => $bobot
+                    'bobot' => number_format($bobot, 10, '.', '')
                 ]);
             }
         }
 
         // =========================
-        // KIRIM KE VIEW
+        // KIRIM DATA
         // =========================
         $data = [
             'matrix' => $matrix,
             'normal' => $normal,
             'eigen' => $eigen,
+            'lambda_detail' => $lambda_detail,
             'lambda_max' => $lambda_max,
             'ci' => $ci,
             'cr' => $cr,
-            'konsisten' => $cr < 0.1
+            'ri' => $ri,
+            'konsisten' => ($cr < 0.1)
         ];
 
         $this->load->view('header');
@@ -299,40 +313,96 @@ class Controller extends CI_Controller
 
     public function proses_pm()
     {
+        // =========================
+        // AMBIL DATA
+        // =========================
+
         $karyawan = $this->db->get('karyawan')->result();
         $kriteria = $this->db->get('kriteria')->result();
+        $nilai = $this->db->get('nilai_karyawan')->result();
         $bobot = $this->db->get('ahp_bobot')->result();
 
-        // ubah jadi array
+        // =========================
+        // BOBOT AHP
+        // =========================
+
         $bobot_ahp = [];
+
         foreach ($bobot as $b) {
+
             $bobot_ahp[$b->id_kriteria] = $b->bobot;
         }
 
-        // ambil nilai
-        $nilai = $this->db->get('nilai_karyawan')->result();
+        // =========================
+        // NILAI KARYAWAN
+        // =========================
 
         $data_nilai = [];
+
         foreach ($nilai as $n) {
+
             $data_nilai[$n->id_karyawan][$n->id_kriteria] = $n->nilai;
         }
 
-        // fungsi konversi nilai
-        function konversi_nilai($nilai)
-        {
-            if ($nilai >= 90)
-                return 4;
-            elseif ($nilai >= 75)
-                return 3;
-            elseif ($nilai >= 50)
-                return 2;
-            else
-                return 1;
+        // =========================
+        // PROFILE IDEAL
+        // =========================
+
+        $profile_ideal = [];
+
+        foreach ($kriteria as $k) {
+
+            $profile_ideal[$k->id_kriteria] = [
+                'kode' => $k->kode,
+                'target' => $k->nilai_target
+            ];
         }
 
-        function bobot_gap($gap)
+        // =========================
+        // FUNGSI KONVERSI NILAI
+        // =========================
+
+        function konversi_nilai_pm($nilai)
         {
-            $map = [
+            // 90 - 100
+            if ($nilai >= 90 && $nilai <= 100) {
+
+                return 4;
+
+            }
+            // 75.1 - 89
+            elseif ($nilai >= 75.1 && $nilai <= 89.9) {
+
+                return 3;
+
+            }
+            // 50.1 - 75
+            elseif ($nilai >= 50.1 && $nilai <= 75) {
+
+                return 2;
+
+            }
+            // 1 - 50
+            elseif ($nilai >= 1 && $nilai <= 50) {
+
+                return 1;
+
+            }
+            // default
+            else {
+
+                return 0;
+
+            }
+        }
+
+        // =========================
+        // FUNGSI BOBOT GAP
+        // =========================
+
+        function konversi_gap_pm($gap)
+        {
+            $bobot = [
                 0 => 5,
                 1 => 4.5,
                 -1 => 4,
@@ -343,43 +413,119 @@ class Controller extends CI_Controller
                 4 => 1.5,
                 -4 => 1
             ];
-            return isset($map[$gap]) ? $map[$gap] : 1;
+
+            return isset($bobot[$gap]) ? $bobot[$gap] : 1;
         }
 
-        $hasil = [];
+        // =========================
+        // ARRAY HASIL
+        // =========================
+
+        $konversi_nilai = [];
+        $gap = [];
+        $bobot_gap = [];
+        $hasil_detail = [];
+        $hasil_akhir = [];
+
+        // =========================
+        // PROSES PM + AHP
+        // =========================
 
         foreach ($karyawan as $k) {
+
+            $id_karyawan = $k->id_karyawan;
 
             $total = 0;
 
             foreach ($kriteria as $kr) {
 
-                $nilai_k = $data_nilai[$k->id_karyawan][$kr->id_kriteria];
+                $id_kriteria = $kr->id_kriteria;
 
-                $bobot_nilai = konversi_nilai($nilai_k);
+                // =========================
+                // NILAI ASLI
+                // =========================
 
-                $gap = $bobot_nilai - $kr->nilai_target;
+                $nilai_asli = isset($data_nilai[$id_karyawan][$id_kriteria])
+                    ? $data_nilai[$id_karyawan][$id_kriteria]
+                    : 0;
 
-                $bobotGap = bobot_gap($gap);
+                // =========================
+                // KONVERSI NILAI
+                // =========================
 
-                $total += $bobotGap * $bobot_ahp[$kr->id_kriteria];
+                $nilai_konversi = konversi_nilai_pm($nilai_asli);
+
+                $konversi_nilai[$id_karyawan][$id_kriteria] = $nilai_konversi;
+
+                // =========================
+                // HITUNG GAP
+                // =========================
+
+                $selisih_gap = $nilai_konversi - $kr->nilai_target;
+
+                $gap[$id_karyawan][$id_kriteria] = $selisih_gap;
+
+                // =========================
+                // BOBOT GAP
+                // =========================
+
+                $nilai_bobot_gap = konversi_gap_pm($selisih_gap);
+
+                $bobot_gap[$id_karyawan][$id_kriteria] = $nilai_bobot_gap;
+
+                // =========================
+                // HITUNG NILAI AKHIR
+                // =========================
+
+                $bobotAHP = isset($bobot_ahp[$id_kriteria])
+                    ? $bobot_ahp[$id_kriteria]
+                    : 0;
+
+                $hasil = $nilai_bobot_gap * $bobotAHP;
+
+                $hasil_detail[$id_karyawan][$id_kriteria] = $hasil;
+
+                $total += $hasil;
             }
 
-            $hasil[$k->id_karyawan] = $total;
-        }
+            // =========================
+            // TOTAL NILAI AKHIR
+            // =========================
 
-        // simpan hasil
+            $hasil_akhir[$id_karyawan] = $total;
+        }
+        // =========================
+        // SIMPAN HASIL AKHIR
+        // =========================
+
         $this->db->truncate('hasil_akhir');
 
-        foreach ($hasil as $id => $nilai) {
+        foreach ($hasil_akhir as $id => $nilai) {
+
             $this->db->insert('hasil_akhir', [
                 'id_karyawan' => $id,
-                'nilai_akhir' => $nilai
+                'nilai_akhir' => number_format($nilai, 9, '.', '')
             ]);
         }
 
+        // =========================
+        // KIRIM DATA KE VIEW
+        // =========================
+
+        $data = [
+            'karyawan' => $karyawan,
+            'kriteria' => $kriteria,
+            'profile_ideal' => $profile_ideal,
+            'konversi_nilai' => $konversi_nilai,
+            'gap' => $gap,
+            'bobot_gap' => $bobot_gap,
+            'hasil_detail' => $hasil_detail,
+            'hasil_akhir' => $hasil_akhir,
+            'bobot_ahp' => $bobot_ahp
+        ];
+
         $this->load->view('header');
-        $this->load->view('pm/pm_ahp', ['hasil' => $hasil]);
+        $this->load->view('pm/pm_ahp', $data);
     }
 
     public function ranking()
@@ -393,6 +539,35 @@ class Controller extends CI_Controller
 
         $this->load->view('header');
         $this->load->view('ranking/ranking', $data);
+    }
+
+    public function kelola_user()
+    {
+        $data['users'] = $this->db
+            ->order_by('id_user', 'DESC')
+            ->get('users')
+            ->result();
+
+        $this->load->view('header');
+        $this->load->view('user/user', $data);
+    }
+
+    public function tambah_user()
+    {
+        $this->load->view('header');
+        $this->load->view('user/tambah_user');
+    }
+
+    public function edit_user()
+    {
+        $id = $this->input->get('id');
+
+        $data['user'] = $this->db
+            ->get_where('users', ['id_user' => $id])
+            ->row_array();
+
+        $this->load->view('header');
+        $this->load->view('user/edit_user', $data);
     }
 }
 
