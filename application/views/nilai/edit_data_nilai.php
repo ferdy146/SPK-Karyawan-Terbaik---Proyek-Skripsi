@@ -131,7 +131,8 @@ if ($_SESSION['role'] != 'admin') {
         </div>
     </footer>
 </div>
-
+<script src="<?= base_url('vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
 <script>
     $(document).on('input', '.nilai', function () {
         this.value = this.value

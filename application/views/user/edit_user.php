@@ -23,61 +23,41 @@ if ($_SESSION['role'] != 'admin') {
 ?>
 
 <div id="content-wrapper" class="d-flex flex-column">
-
     <div id="content">
-
         <!-- HEADER -->
         <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-
             <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                 <i class="fa fa-bars"></i>
             </button>
-
             <ul class="navbar-nav ml-auto">
                 <img src="<?= base_url('img/pt.png') ?>" style="height:90px; width:auto;">
             </ul>
-
         </nav>
 
         <!-- CONTENT -->
         <div class="container-fluid">
-
             <!-- TITLE -->
             <div class="d-sm-flex align-items-center justify-content-between mb-4">
-
                 <h3 class="mb-0 text-gray-800">
-
                     Edit Data User
-
                 </h3>
 
                 <a href="<?= base_url('kelola_user') ?>" class="btn btn-secondary shadow-sm">
-
                     <i class="fas fa-arrow-left fa-sm text-white-50"></i>
-
                     Kembali
-
                 </a>
-
             </div>
 
             <!-- CARD -->
             <div class="card shadow mb-4">
-
                 <div class="card-header py-3">
-
                     <h6 class="m-0 font-weight-bold text-primary">
-
                         Form Edit User
-
                     </h6>
-
                 </div>
 
                 <div class="card-body">
-
                     <form method="post" action="<?= base_url('Insert/update_user') ?>">
-
                         <input type="hidden" name="id_user" value="<?= $user['id_user'] ?>">
 
                         <!-- NAMA -->
@@ -188,3 +168,5 @@ if ($_SESSION['role'] != 'admin') {
     </footer>
 
 </div>
+<script src="<?= base_url('vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
